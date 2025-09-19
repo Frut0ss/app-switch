@@ -45,13 +45,26 @@ export default async function handler(req, res) {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(buyerUserAgent);
     console.log("Is Mobile Device:", isMobile);
 
+    // Construct the full URLs with order tracking
+    const baseUrl = "https://app-switch.vercel.app";
+    const returnUrl = `${baseUrl}/#return`;
+    const cancelUrl = `${baseUrl}/#cancel`;
+
+    console.log("Creating order with config:", {
+      userAgent: buyerUserAgent,
+      isMobile,
+      returnUrl,
+      cancelUrl
+    });
+
     const orderRes = await fetch(`${base}/v2/checkout/orders`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${access_token}`,
         "Content-Type": "application/json",
         "PayPal-Partner-Attribution-Id": "PPCP",
-        "User-Agent": buyerUserAgent // Forward the user agent to PayPal
+        "User-Agent": buyerUserAgent,
+        "Accept": "application/json"
       },
       body: JSON.stringify({
         intent: "CAPTURE",
@@ -59,8 +72,9 @@ export default async function handler(req, res) {
           paypal: {
             experience_context: {
               user_action: "PAY_NOW",
-              return_url: "https://app-switch.vercel.app/#return",
-              cancel_url: "https://app-switch.vercel.app/#return",
+              return_url: returnUrl,
+              cancel_url: cancelUrl,
+              payment_method_selected: "PAYPAL",
               app_switch_context: {
                 mobile_web: {
                   return_flow: "AUTO",

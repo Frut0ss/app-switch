@@ -41,16 +41,48 @@ export default async function handler(req, res) {
     });
     const { access_token } = await tokenRes.json();
 
-    const captureRes = await fetch(`${base}/v2/checkout/orders/${orderID}/capture`, {
-      method: "POST",
+    // First, get the order details to check its status
+    const orderRes = await fetch(`${base}/v2/checkout/orders/${orderID}`, {
+      method: "GET",
       headers: {
         "Authorization": `Bearer ${access_token}`,
         "Content-Type": "application/json",
       },
     });
+    
+    const orderData = await orderRes.json();
+    console.log("Order status before capture:", orderData);
+
+    if (orderData.status !== "APPROVED") {
+      console.log("Cannot capture order, status is:", orderData.status);
+      return res.status(400).json({
+        error: "Order not approved",
+        status: orderData.status,
+        details: orderData
+      });
+    }
+
+    const captureRes = await fetch(`${base}/v2/checkout/orders/${orderID}/capture`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${access_token}`,
+        "Content-Type": "application/json",
+        "PayPal-Request-Id": orderID, // Idempotency key
+        "Accept": "application/json"
+      },
+    });
 
     const data = await captureRes.json();
-    console.log("Order captured:", data);
+    console.log("Order capture response:", data);
+
+    if (!captureRes.ok) {
+      console.error("Capture failed:", data);
+      return res.status(captureRes.status).json({
+        error: "Capture failed",
+        details: data
+      });
+    }
+
     res.status(200).json(data);
   } catch (err) {
     console.error("Capture Order Error:", err);

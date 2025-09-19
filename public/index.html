@@ -117,21 +117,49 @@
       
       if (params.token) {
         setStatus("Capturing payment...");
-        const res = await fetch("/api/capture-order", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderID: params.token })
-        });
-        const capture = await res.json();
-        setDebug({ device: getDeviceType(), userAgent: navigator.userAgent, params, capture });
-        if (capture.status === "COMPLETED") {
-          setStatus("Payment completed!");
-        } else {
+        try {
+          const res = await fetch("/api/capture-order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderID: params.token })
+          });
+          const capture = await res.json();
+          setDebug({ 
+            event: 'capture_response',
+            device: getDeviceType(), 
+            userAgent: navigator.userAgent, 
+            params, 
+            capture,
+            status: res.status
+          });
+          
+          if (res.ok && capture.status === "COMPLETED") {
+            setStatus("Payment completed!");
+            sessionStorage.removeItem('pendingOrder');
+          } else {
+            setStatus(`Payment capture failed: ${capture.error || 'Unknown error'}`);
+            console.error("Capture failed:", capture);
+          }
+        } catch (err) {
           setStatus("Payment capture failed");
+          console.error("Capture error:", err);
+          setDebug({ 
+            event: 'capture_error',
+            error: err.message,
+            device: getDeviceType(),
+            userAgent: navigator.userAgent,
+            params
+          });
         }
       } else if (params.canceled !== undefined) {
-        setStatus("Payment canceled");
-        setDebug({ device: getDeviceType(), userAgent: navigator.userAgent, params });
+        setStatus("Payment canceled by user");
+        sessionStorage.removeItem('pendingOrder');
+        setDebug({ 
+          event: 'payment_canceled',
+          device: getDeviceType(), 
+          userAgent: navigator.userAgent, 
+          params 
+        });
       }
     });
 

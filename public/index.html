@@ -65,6 +65,25 @@
       border-radius: 6px;
       word-break: break-all;
     }
+    #retry-btn {
+      display: none;
+      background: #2d9e51;
+      border: none;
+      color: white;
+      padding: 12px 24px;
+      font-size: 15px;
+      font-weight: bold;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background 0.2s;
+    }
+    #retry-btn:hover {
+      background: #268545;
+    }
+    #retry-btn.visible {
+      display: inline-block;
+    }
   </style>
 </head>
 <body>
@@ -74,6 +93,7 @@
     Pay with PayPal
   </button>
   <div id="status">Ready</div>
+  <button id="retry-btn" style="display: none;">Try Another Payment</button>
   <div id="debug"></div>
   
   <div class="note">
@@ -89,6 +109,9 @@
   <script>
     const statusDiv = document.getElementById("status");
     const debugDiv = document.getElementById("debug");
+    const paypalBtn = document.getElementById("paypal-btn");
+    const retryBtn = document.getElementById("retry-btn");
+
     function setStatus(msg) {
       statusDiv.textContent = msg;
       console.log(msg);
@@ -96,6 +119,22 @@
     function setDebug(obj) {
       debugDiv.textContent = JSON.stringify(obj, null, 2);
     }
+    
+    function showRetryButton() {
+      retryBtn.style.display = "inline-block";
+      paypalBtn.style.display = "none";
+    }
+
+    function resetUI() {
+      retryBtn.style.display = "none";
+      paypalBtn.style.display = "flex";
+      setStatus("Ready");
+      setDebug({});
+    }
+
+    retryBtn.addEventListener("click", () => {
+      resetUI();
+    });
     function getDeviceType() {
       const ua = navigator.userAgent;
       if (/android/i.test(ua)) return "Android";
@@ -165,6 +204,7 @@
           if (res.ok && capture.status === "COMPLETED") {
             setStatus("Payment completed!");
             sessionStorage.removeItem('pendingOrder');
+            showRetryButton();
           } else {
             setStatus(`Payment capture failed: ${capture.error || 'Unknown error'}`);
             console.error("Capture failed:", capture);

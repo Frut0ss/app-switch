@@ -49,14 +49,14 @@ export default async function handler(req, res) {
         intent: "CAPTURE",
         payment_source: {
           paypal: {
-            email_address: "customer@example.com", // optional
+            email_address: "customer@example.com",
             experience_context: {
               user_action: "PAY_NOW",
               return_url: "https://app-switch.vercel.app/#return",
-              cancel_url: "https://app-switch.vercel.app/#cancel",
+              cancel_url: "https://app-switch.vercel.app/#return", // Same as return_url for mobile
               app_switch_context: {
                 mobile_web: {
-                  return_flow: "AUTO",
+                  return_flow: "AUTO", // or MANUAL if you prefer
                   buyer_user_agent: buyerUserAgent,
                 },
               },

@@ -84,6 +84,10 @@
       const order = await res.json();
       setDebug({ device: getDeviceType(), userAgent: navigator.userAgent, order });
       if (order.links) {
+        // Store order ID for checking status later
+        if (order.id) {
+          sessionStorage.setItem('pendingOrder', order.id);
+        }
         const approvalUrl = order.links.find(link => link.rel === "payer-action").href;
         setStatus("Redirecting to PayPal...");
         window.location.href = approvalUrl;
@@ -103,27 +107,79 @@
       return params;
     }
 
-    window.addEventListener("load", async () => {
-      const hashParams = parseHashParams(window.location.hash);
-      setDebug({ device: getDeviceType(), userAgent: navigator.userAgent, hashParams });
-      if (hashParams.token) {
+    // Handle hash changes for AUTO return flow
+    window.addEventListener("hashchange", async (e) => {
+      const params = parseHashParams(window.location.hash);
+      setDebug({ event: 'hashchange', params });
+      
+      if (params.token) {
         setStatus("Capturing payment...");
         const res = await fetch("/api/capture-order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderID: hashParams.token })
+          body: JSON.stringify({ orderID: params.token })
         });
         const capture = await res.json();
-        setDebug({ device: getDeviceType(), userAgent: navigator.userAgent, hashParams, capture });
-        console.log("Capture result:", capture);
+        setDebug({ device: getDeviceType(), userAgent: navigator.userAgent, params, capture });
         if (capture.status === "COMPLETED") {
           setStatus("Payment completed!");
         } else {
           setStatus("Payment capture failed");
         }
-      } else if (hashParams.canceled !== undefined) {
+      } else if (params.canceled !== undefined) {
         setStatus("Payment canceled");
-        setDebug({ device: getDeviceType(), userAgent: navigator.userAgent, hashParams });
+        setDebug({ device: getDeviceType(), userAgent: navigator.userAgent, params });
+      }
+    });
+
+    // Handle visibility changes for MANUAL return flow and abandoned checkouts
+    document.addEventListener('visibilitychange', async (e) => {
+      if (!document.hidden) {
+        setDebug({ event: 'visibilitychange', visible: true });
+        // Check if we have a pending order to check
+        const pendingOrder = sessionStorage.getItem('pendingOrder');
+        if (pendingOrder) {
+          setStatus("Checking order status...");
+          const res = await fetch("/api/capture-order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderID: pendingOrder })
+          });
+          const capture = await res.json();
+          setDebug({ event: 'visibilitychange', pendingOrder, capture });
+          if (capture.status === "COMPLETED") {
+            setStatus("Payment completed!");
+            sessionStorage.removeItem('pendingOrder');
+          } else if (capture.error) {
+            setStatus("Payment not completed. You can try again.");
+            sessionStorage.removeItem('pendingOrder');
+          }
+        }
+      }
+    });
+
+    // Initial load handling
+    window.addEventListener("load", async () => {
+      const params = parseHashParams(window.location.hash);
+      setDebug({ event: 'load', params });
+      
+      if (params.token) {
+        setStatus("Capturing payment...");
+        const res = await fetch("/api/capture-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderID: params.token })
+        });
+        const capture = await res.json();
+        setDebug({ device: getDeviceType(), userAgent: navigator.userAgent, params, capture });
+        if (capture.status === "COMPLETED") {
+          setStatus("Payment completed!");
+        } else {
+          setStatus("Payment capture failed");
+        }
+      } else if (params.canceled !== undefined) {
+        setStatus("Payment canceled");
+        setDebug({ device: getDeviceType(), userAgent: navigator.userAgent, params });
       }
     });
   </script>

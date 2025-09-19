@@ -39,53 +39,29 @@ export default async function handler(req, res) {
 
     // 2. Create order with App Switch context
     const buyerUserAgent = req.headers["user-agent"];
-    console.log("Received User-Agent:", buyerUserAgent);
-    
-    // Check if it's a mobile device
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(buyerUserAgent);
-    console.log("Is Mobile Device:", isMobile);
-
-    // Construct the full URLs with order tracking
-    const baseUrl = "https://app-switch.vercel.app";
-    const returnUrl = `${baseUrl}/#return`;
-    const cancelUrl = `${baseUrl}/#cancel`;
-
-    console.log("Creating order with config:", {
-      userAgent: buyerUserAgent,
-      isMobile,
-      returnUrl,
-      cancelUrl
-    });
-
     const orderRes = await fetch(`${base}/v2/checkout/orders`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${access_token}`,
         "Content-Type": "application/json",
-        "PayPal-Partner-Attribution-Id": "PPCP",
-        "User-Agent": buyerUserAgent,
-        "Accept": "application/json"
       },
       body: JSON.stringify({
         intent: "CAPTURE",
         payment_source: {
           paypal: {
+            email_address: "customer@example.com",
             experience_context: {
               user_action: "PAY_NOW",
-              return_url: returnUrl,
-              cancel_url: cancelUrl,
-              payment_method_selected: "PAYPAL",
+              return_url: "https://app-switch.vercel.app/#return",
+              cancel_url: "https://app-switch.vercel.app/#return", // Same as return_url for mobile
               app_switch_context: {
                 mobile_web: {
-                  return_flow: "AUTO",
-                  buyer_user_agent: buyerUserAgent
-                }
+                  return_flow: "AUTO", // or MANUAL if you prefer
+                  buyer_user_agent: buyerUserAgent,
+                },
               },
-              landing_page: "LOGIN",
-              payment_method_preference: "IMMEDIATE_PAYMENT_REQUIRED",
-              shipping_preference: "NO_SHIPPING"
-            }
-          }
+            },
+          },
         },
         purchase_units: [
           {

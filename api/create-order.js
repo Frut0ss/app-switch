@@ -34,6 +34,7 @@ export default async function handler(req, res) {
         intent: "CAPTURE",
         payment_source: {
           paypal: {
+            email_address: "customer@example.com", // optional
             experience_context: {
               user_action: "PAY_NOW",
               return_url: "http://localhost:3000/#return",
@@ -59,6 +60,7 @@ export default async function handler(req, res) {
     });
 
     const data = await orderRes.json();
+    console.log("Order created:", data);
     res.status(200).json(data);
   } catch (err) {
     console.error("Create Order Error:", err);

@@ -35,7 +35,7 @@ export default async function handler(req, res) {
     });
 
     const data = await captureRes.json();
-    console.log("[API] Capture response:", data);
+    console.log("Order captured:", data);
     res.status(200).json(data);
   } catch (err) {
     console.error("Capture Order Error:", err);

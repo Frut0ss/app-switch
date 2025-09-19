@@ -1,1 +1,131 @@
-// ...existing code...
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PayPal App Switch Demo</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 0; padding: 40px; }
+    h2 { color: #333; }
+    #paypal-btn {
+      background: #fff;
+      border: 2px solid #0070ba;
+      color: #0070ba;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      transition: background 0.2s, color 0.2s;
+    }
+    #paypal-btn:hover {
+      background: #0070ba;
+      color: #fff;
+    }
+    #paypal-logo {
+      height: 24px;
+      vertical-align: middle;
+    }
+    #status {
+      margin-top: 30px;
+      padding: 16px;
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      color: #222;
+      min-height: 40px;
+      font-size: 15px;
+    }
+    #debug {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #666;
+      background: #f0f0f0;
+      padding: 10px;
+      border-radius: 6px;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <h2>Pay with PayPal (App Switch)</h2>
+  <button id="paypal-btn">
+    <img id="paypal-logo" src="https://www.paypalobjects.com/webstatic/mktg/Logo/pp-logo-100px.png" alt="PayPal Logo" />
+    Pay with PayPal
+  </button>
+  <div id="status">Ready</div>
+  <div id="debug"></div>
+
+  <script>
+    const statusDiv = document.getElementById("status");
+    const debugDiv = document.getElementById("debug");
+    function setStatus(msg) {
+      statusDiv.textContent = msg;
+      console.log(msg);
+    }
+    function setDebug(obj) {
+      debugDiv.textContent = JSON.stringify(obj, null, 2);
+    }
+    function getDeviceType() {
+      const ua = navigator.userAgent;
+      if (/android/i.test(ua)) return "Android";
+      if (/iPad|iPhone|iPod/.test(ua)) return "iOS";
+      if (/Windows/.test(ua)) return "Windows";
+      if (/Macintosh/.test(ua)) return "Mac";
+      return "Other";
+    }
+
+    document.getElementById("paypal-btn").addEventListener("click", async () => {
+      setStatus("Creating order...");
+      setDebug({ device: getDeviceType(), userAgent: navigator.userAgent });
+      const res = await fetch("/api/create-order", { method: "POST" });
+      const order = await res.json();
+      setDebug({ device: getDeviceType(), userAgent: navigator.userAgent, order });
+      if (order.links) {
+        const approvalUrl = order.links.find(link => link.rel === "payer-action").href;
+        setStatus("Redirecting to PayPal...");
+        window.location.href = approvalUrl;
+      } else {
+        setStatus("Order creation failed");
+        setDebug({ error: order });
+        console.error(order);
+      }
+    });
+
+    function parseHashParams(hash) {
+      const params = {};
+      hash.substring(1).split("&").forEach(kv => {
+        const [key, value] = kv.split("=");
+        params[key] = value;
+      });
+      return params;
+    }
+
+    window.addEventListener("load", async () => {
+      const hashParams = parseHashParams(window.location.hash);
+      setDebug({ device: getDeviceType(), userAgent: navigator.userAgent, hashParams });
+      if (hashParams.token) {
+        setStatus("Capturing payment...");
+        const res = await fetch("/api/capture-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderID: hashParams.token })
+        });
+        const capture = await res.json();
+        setDebug({ device: getDeviceType(), userAgent: navigator.userAgent, hashParams, capture });
+        console.log("Capture result:", capture);
+        if (capture.status === "COMPLETED") {
+          setStatus("Payment completed!");
+        } else {
+          setStatus("Payment capture failed");
+        }
+      } else if (hashParams.canceled !== undefined) {
+        setStatus("Payment canceled");
+        setDebug({ device: getDeviceType(), userAgent: navigator.userAgent, hashParams });
+      }
+    });
+  </script>
+</body>
+</html>

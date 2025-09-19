@@ -39,29 +39,39 @@ export default async function handler(req, res) {
 
     // 2. Create order with App Switch context
     const buyerUserAgent = req.headers["user-agent"];
+    console.log("Received User-Agent:", buyerUserAgent);
+    
+    // Check if it's a mobile device
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(buyerUserAgent);
+    console.log("Is Mobile Device:", isMobile);
+
     const orderRes = await fetch(`${base}/v2/checkout/orders`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${access_token}`,
         "Content-Type": "application/json",
+        "PayPal-Partner-Attribution-Id": "PPCP",
+        "User-Agent": buyerUserAgent // Forward the user agent to PayPal
       },
       body: JSON.stringify({
         intent: "CAPTURE",
         payment_source: {
           paypal: {
-            email_address: "customer@example.com",
             experience_context: {
               user_action: "PAY_NOW",
               return_url: "https://app-switch.vercel.app/#return",
-              cancel_url: "https://app-switch.vercel.app/#return", // Same as return_url for mobile
+              cancel_url: "https://app-switch.vercel.app/#return",
               app_switch_context: {
                 mobile_web: {
-                  return_flow: "AUTO", // or MANUAL if you prefer
-                  buyer_user_agent: buyerUserAgent,
-                },
+                  return_flow: "AUTO",
+                  buyer_user_agent: buyerUserAgent
+                }
               },
-            },
-          },
+              landing_page: "LOGIN",
+              payment_method_preference: "IMMEDIATE_PAYMENT_REQUIRED",
+              shipping_preference: "NO_SHIPPING"
+            }
+          }
         },
         purchase_units: [
           {

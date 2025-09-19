@@ -2,6 +2,9 @@
   "name": "paypal-app-switch",
   "version": "1.0.0",
   "type": "module",
+  "scripts": {
+    "build": "echo 'No build step needed'"
+  },
   "dependencies": {
     "node-fetch": "^3.3.2"
   }

@@ -37,8 +37,8 @@ export default async function handler(req, res) {
             email_address: "customer@example.com", // optional
             experience_context: {
               user_action: "PAY_NOW",
-              return_url: "http://localhost:3000/#return",
-              cancel_url: "http://localhost:3000/#cancel",
+              return_url: "https://app-switch.vercel.app/#return",
+              cancel_url: "https://app-switch.vercel.app/#cancel",
               app_switch_context: {
                 mobile_web: {
                   return_flow: "AUTO",

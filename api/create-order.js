@@ -50,7 +50,9 @@ export default async function handler(req, res) {
     console.log({
       event: "create_order_start",
       userAgent: buyerUserAgent,
-      isMobile
+      isMobile,
+      timestamp: new Date().toISOString(),
+      environment: "sandbox"
     });
 
     // Base URL for redirects
@@ -69,12 +71,21 @@ export default async function handler(req, res) {
         "Content-Type": "application/json",
         "PayPal-Partner-Attribution-Id": "PPCP",
         "PayPal-Request-Id": `order_${Date.now()}`,
-        "Accept": "application/json"
+        "Accept": "application/json",
+        "PayPal-Client-Metadata-Id": `${Date.now()}`, // Add unique client metadata ID
+        "PayPal-Request-Source": "MOBILE_WEB_CHECKOUT" // Indicate mobile web source
       },
       body: JSON.stringify({
         intent: "CAPTURE",
         payment_source: {
           paypal: {
+            // Always include app_switch_context for proper eligibility check
+            app_switch_context: {
+              mobile_web: {
+                return_flow: "AUTO",
+                buyer_user_agent: buyerUserAgent
+              }
+            },
             experience_context: {
               user_action: "PAY_NOW",
               return_url: returnUrl,
@@ -82,14 +93,8 @@ export default async function handler(req, res) {
               payment_method_selected: "PAYPAL",
               landing_page: "LOGIN",
               shipping_preference: "NO_SHIPPING",
-              ...(isMobile ? {
-                app_switch_context: {
-                  mobile_web: {
-                    return_flow: "AUTO",
-                    buyer_user_agent: buyerUserAgent
-                  }
-                }
-              } : {})
+              brand_name: "Your Store", // Add brand name
+              locale: "en-US", // Add locale
             }
           }
         },
@@ -110,7 +115,10 @@ export default async function handler(req, res) {
       event: "order_created",
       orderId: data.id,
       status: data.status,
-      appSwitchEligibility: data.payment_source?.paypal?.app_switch_eligibility
+      appSwitchEligibility: data.payment_source?.paypal?.app_switch_eligibility,
+      paymentSource: data.payment_source,
+      timestamp: new Date().toISOString(),
+      links: data.links
     });
 
     if (!orderRes.ok) {

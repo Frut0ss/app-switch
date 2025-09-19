@@ -10,26 +10,41 @@
     body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 0; padding: 40px; }
     h2 { color: #333; }
     #paypal-btn {
-      background: #fff;
-      border: 2px solid #0070ba;
-      color: #0070ba;
-      padding: 12px 24px;
+      background: #ffc439;
+      border: none;
+      color: #253b80;
+      padding: 15px 30px;
       font-size: 16px;
-      border-radius: 6px;
+      font-weight: bold;
+      border-radius: 4px;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-      transition: background 0.2s, color 0.2s;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      transition: background 0.2s;
     }
     #paypal-btn:hover {
-      background: #0070ba;
-      color: #fff;
+      background: #f4b92e;
     }
     #paypal-logo {
-      height: 24px;
+      height: 25px;
       vertical-align: middle;
+    }
+    .creator {
+      margin-top: 40px;
+      font-size: 14px;
+      color: #666;
+      text-align: center;
+    }
+    .note {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8f8f8;
+      border-left: 4px solid #ffc439;
+      font-size: 14px;
+      color: #666;
+      line-height: 1.5;
     }
     #status {
       margin-top: 30px;
@@ -60,6 +75,16 @@
   </button>
   <div id="status">Ready</div>
   <div id="debug"></div>
+  
+  <div class="note">
+    📱 Important: To test this demo, please:
+    <br>1. Download the PayPal Sandbox App
+    <br>2. Use a US PayPal Sandbox buyer account
+  </div>
+
+  <div class="creator">
+    Demo created by Alejandro Frutos
+  </div>
 
   <script>
     const statusDiv = document.getElementById("status");

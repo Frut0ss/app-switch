@@ -14,6 +14,7 @@ export default async function handler(req, res) {
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
   );
 
+  // Handle OPTIONS request for CORS
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
@@ -25,7 +26,7 @@ export default async function handler(req, res) {
       `${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`
     ).toString("base64");
 
-    // Get access token
+    // 1. Get access token
     const tokenRes = await fetch(`${base}/v1/oauth2/token`, {
       method: "POST",
       headers: {
@@ -34,67 +35,55 @@ export default async function handler(req, res) {
       },
       body: "grant_type=client_credentials",
     });
-
-    if (!tokenRes.ok) {
-      const error = await tokenRes.text();
-      console.error("Token Error:", error);
-      return res.status(tokenRes.status).json({ error: "Failed to get access token" });
-    }
-
     const { access_token } = await tokenRes.json();
 
-    // Get user agent and check device type
+    // 2. Create order with App Switch context
     const buyerUserAgent = req.headers["user-agent"];
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(buyerUserAgent);
+    console.log("Received User-Agent:", buyerUserAgent);
     
-    console.log({
-      event: "create_order_start",
+    // Check if it's a mobile device
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(buyerUserAgent);
+    console.log("Is Mobile Device:", isMobile);
+
+    // Construct the full URLs with order tracking
+    const baseUrl = "https://app-switch.vercel.app";
+    const returnUrl = `${baseUrl}/#return`;
+    const cancelUrl = `${baseUrl}/#cancel`;
+
+    console.log("Creating order with config:", {
       userAgent: buyerUserAgent,
       isMobile,
-      timestamp: new Date().toISOString(),
-      environment: "sandbox"
+      returnUrl,
+      cancelUrl
     });
 
-    // Base URL for redirects
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}`
-      : req.headers.origin || 'http://localhost:3000';
-
-    // Same URL for both return and cancel (required for mobile web)
-    const returnUrl = `${baseUrl}/#return`;
-
-    // Create order with App Switch context for mobile
     const orderRes = await fetch(`${base}/v2/checkout/orders`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${access_token}`,
         "Content-Type": "application/json",
         "PayPal-Partner-Attribution-Id": "PPCP",
-        "PayPal-Request-Id": `order_${Date.now()}`,
-        "Accept": "application/json",
-        "PayPal-Client-Metadata-Id": `${Date.now()}`, // Add unique client metadata ID
-        "PayPal-Request-Source": "MOBILE_WEB_CHECKOUT" // Indicate mobile web source
+        "User-Agent": buyerUserAgent,
+        "Accept": "application/json"
       },
       body: JSON.stringify({
         intent: "CAPTURE",
         payment_source: {
           paypal: {
-            // Always include app_switch_context for proper eligibility check
-            app_switch_context: {
-              mobile_web: {
-                return_flow: "AUTO",
-                buyer_user_agent: buyerUserAgent
-              }
-            },
             experience_context: {
               user_action: "PAY_NOW",
               return_url: returnUrl,
-              cancel_url: returnUrl,
+              cancel_url: cancelUrl,
               payment_method_selected: "PAYPAL",
+              app_switch_context: {
+                mobile_web: {
+                  return_flow: "AUTO",
+                  buyer_user_agent: buyerUserAgent
+                }
+              },
               landing_page: "LOGIN",
-              shipping_preference: "NO_SHIPPING",
-              brand_name: "Your Store", // Add brand name
-              locale: "en-US", // Add locale
+              payment_method_preference: "IMMEDIATE_PAYMENT_REQUIRED",
+              shipping_preference: "NO_SHIPPING"
             }
           }
         },
@@ -102,30 +91,15 @@ export default async function handler(req, res) {
           {
             amount: {
               currency_code: "USD",
-              value: "64.00"
-            }
-          }
-        ]
-      })
+              value: "64.00",
+            },
+          },
+        ],
+      }),
     });
 
     const data = await orderRes.json();
-    
-    console.log({
-      event: "order_created",
-      orderId: data.id,
-      status: data.status,
-      appSwitchEligibility: data.payment_source?.paypal?.app_switch_eligibility,
-      paymentSource: data.payment_source,
-      timestamp: new Date().toISOString(),
-      links: data.links
-    });
-
-    if (!orderRes.ok) {
-      console.error("Order creation failed:", data);
-      return res.status(orderRes.status).json(data);
-    }
-
+    console.log("Order created:", data);
     res.status(200).json(data);
   } catch (err) {
     console.error("Create Order Error:", err);

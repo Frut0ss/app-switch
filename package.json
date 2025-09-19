@@ -1,0 +1,14 @@
+{
+  "name": "paypal-app-switch",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.2",
+    "env": "^0.0.2",
+    "express": "^4.21.2",
+    "node-fetch": "^3.3.2"
+  }
+}

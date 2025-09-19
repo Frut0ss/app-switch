@@ -1,0 +1,67 @@
+import fetch from "node-fetch";
+
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).end();
+  }
+
+  try {
+    const base = "https://api-m.sandbox.paypal.com";
+    const auth = Buffer.from(
+      `${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`
+    ).toString("base64");
+
+    // 1. Get access token
+    const tokenRes = await fetch(`${base}/v1/oauth2/token`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Basic ${auth}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: "grant_type=client_credentials",
+    });
+    const { access_token } = await tokenRes.json();
+
+    // 2. Create order with App Switch context
+    const buyerUserAgent = req.headers["user-agent"];
+    const orderRes = await fetch(`${base}/v2/checkout/orders`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        intent: "CAPTURE",
+        payment_source: {
+          paypal: {
+            experience_context: {
+              user_action: "PAY_NOW",
+              return_url: "http://localhost:3000/#return",
+              cancel_url: "http://localhost:3000/#cancel",
+              app_switch_context: {
+                mobile_web: {
+                  return_flow: "AUTO",
+                  buyer_user_agent: buyerUserAgent,
+                },
+              },
+            },
+          },
+        },
+        purchase_units: [
+          {
+            amount: {
+              currency_code: "USD",
+              value: "64.00",
+            },
+          },
+        ],
+      }),
+    });
+
+    const data = await orderRes.json();
+    res.status(200).json(data);
+  } catch (err) {
+    console.error("Create Order Error:", err);
+    res.status(500).json({ error: "Failed to create order" });
+  }
+}

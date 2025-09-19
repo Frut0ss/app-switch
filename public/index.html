@@ -103,9 +103,13 @@
 
     function parseHashParams(hash) {
       const params = {};
-      hash.substring(1).split("&").forEach(kv => {
+      // Handle both #return?token=... and #token=... formats
+      const paramString = hash.includes('?') ? hash.split('?')[1] : hash.substring(1);
+      paramString.split("&").forEach(kv => {
         const [key, value] = kv.split("=");
-        params[key] = value;
+        if (key && value) {  // Only add if both key and value exist
+          params[key] = decodeURIComponent(value);
+        }
       });
       return params;
     }
@@ -189,27 +193,58 @@
       }
     });
 
-    // Initial load handling
+    // Initial load handling for App Switch return
     window.addEventListener("load", async () => {
       const params = parseHashParams(window.location.hash);
-      setDebug({ event: 'load', params });
+      setDebug({ event: 'load', params, hash: window.location.hash });
       
       if (params.token) {
+        // Clean up the URL by removing the hash
+        if (window.history && window.history.replaceState) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        
         setStatus("Capturing payment...");
-        const res = await fetch("/api/capture-order", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderID: params.token })
-        });
-        const capture = await res.json();
-        setDebug({ device: getDeviceType(), userAgent: navigator.userAgent, params, capture });
-        if (capture.status === "COMPLETED") {
-          setStatus("Payment completed!");
-        } else {
+        try {
+          const res = await fetch("/api/capture-order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderID: params.token })
+          });
+          const capture = await res.json();
+          setDebug({ 
+            event: 'initial_capture',
+            device: getDeviceType(), 
+            userAgent: navigator.userAgent, 
+            params, 
+            capture,
+            status: res.status
+          });
+          
+          if (res.ok && capture.status === "COMPLETED") {
+            setStatus("Payment completed!");
+            sessionStorage.removeItem('pendingOrder');
+          } else {
+            setStatus(`Payment capture failed: ${capture.error || 'Unknown error'}`);
+            console.error("Capture failed:", capture);
+          }
+        } catch (err) {
           setStatus("Payment capture failed");
+          console.error("Capture error:", err);
+          setDebug({ 
+            event: 'initial_capture_error',
+            error: err.message,
+            device: getDeviceType(),
+            userAgent: navigator.userAgent,
+            params
+          });
         }
       } else if (params.canceled !== undefined) {
         setStatus("Payment canceled");
+        // Clean up the URL
+        if (window.history && window.history.replaceState) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
         setDebug({ device: getDeviceType(), userAgent: navigator.userAgent, params });
       }
     });

@@ -45,7 +45,7 @@ export default async function handler(req, res) {
     
     const { access_token } = await tokenRes.json();
 
-    // 2. Create order with App Switch context optimized for SDK
+    // 2. Create order with App Switch context optimized for mobile web
     const buyerUserAgent = req.headers["user-agent"];
     const orderRes = await fetch(`${base}/v2/checkout/orders`, {
       method: "POST",
@@ -66,6 +66,12 @@ export default async function handler(req, res) {
               shipping_preference: "NO_SHIPPING",
               return_url: "https://app-switch.vercel.app/#return",
               cancel_url: "https://app-switch.vercel.app/#cancel",
+              app_switch_context: {
+                mobile_web: {
+                  return_flow: "AUTO",
+                  buyer_user_agent: buyerUserAgent,
+                },
+              },
             },
           },
         },
@@ -92,7 +98,11 @@ export default async function handler(req, res) {
       });
     }
     
-    console.log("Order created successfully:", { id: data.id, status: data.status });
+    console.log("Order created successfully:", { 
+      id: data.id, 
+      status: data.status,
+      app_switch_eligibility: data.payment_source?.paypal?.app_switch_eligibility 
+    });
     res.status(200).json(data);
   } catch (err) {
     console.error("Create Order Error:", err);

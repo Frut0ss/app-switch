@@ -299,6 +299,8 @@
       // Clear existing buttons
       document.getElementById('paypal-button-container').innerHTML = '';
       
+      // For App Switch, we need to create the order server-side and redirect manually
+      // rather than using SDK's createOrder callback
       paypal.Buttons({
         style: {
           layout: 'vertical',
@@ -308,7 +310,8 @@
           height: 55
         },
         
-        createOrder: async function(data, actions) {
+        onClick: async function(data, actions) {
+          // Create order server-side for app switch
           setStatus("Creating order...", 'processing');
           setDebug({ device: getDeviceType(), userAgent: navigator.userAgent });
           
@@ -339,13 +342,38 @@
               sessionStorage.setItem('pendingOrder', order.id);
             }
             
+            // Check if app switch is eligible
+            if (order.payment_source?.paypal?.app_switch_eligibility) {
+              // Find the approval URL for app switch
+              const approvalUrl = order.links?.find(link => link.rel === "payer-action")?.href;
+              if (approvalUrl) {
+                setStatus("Redirecting to PayPal app...", 'processing');
+                // Redirect to PayPal (this will attempt app switch)
+                window.location.href = approvalUrl;
+                return false; // Prevent SDK from handling
+              }
+            }
+            
+            // Fallback: let SDK handle if app switch not eligible
             return order.id;
           } catch (error) {
             setStatus("Order creation failed", 'error');
             setDebug({ error: error.message });
             console.error('Order creation error:', error);
-            throw error;
+            return false; // Prevent SDK from continuing
           }
+        },
+        
+        createOrder: function(data, actions) {
+          // This won't be called when we handle onClick above
+          // But keeping it as fallback
+          return actions.order.create({
+            purchase_units: [{
+              amount: {
+                value: '10.00'
+              }
+            }]
+          });
         },
         
         onApprove: async function(data, actions) {

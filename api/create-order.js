@@ -21,6 +21,8 @@ export default async function handler(req, res) {
   }
 
   try {
+    const { cart } = req.body || {};
+    
     const base = "https://api-m.sandbox.paypal.com";
     const auth = Buffer.from(
       `${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`
@@ -35,47 +37,62 @@ export default async function handler(req, res) {
       },
       body: "grant_type=client_credentials",
     });
+    
+    if (!tokenRes.ok) {
+      console.error("Token Error:", await tokenRes.text());
+      return res.status(tokenRes.status).json({ error: "Failed to get access token" });
+    }
+    
     const { access_token } = await tokenRes.json();
 
-    // 2. Create order with App Switch context
+    // 2. Create order with App Switch context optimized for SDK
     const buyerUserAgent = req.headers["user-agent"];
     const orderRes = await fetch(`${base}/v2/checkout/orders`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${access_token}`,
         "Content-Type": "application/json",
+        "PayPal-Request-Id": `create_${Date.now()}`,
       },
       body: JSON.stringify({
         intent: "CAPTURE",
         payment_source: {
           paypal: {
-            email_address: "customer@example.com",
             experience_context: {
               user_action: "PAY_NOW",
+              payment_method_preference: "IMMEDIATE_PAYMENT_REQUIRED",
+              brand_name: "PayPal App Switch Demo",
+              locale: "en-US",
+              shipping_preference: "NO_SHIPPING",
               return_url: "https://app-switch.vercel.app/#return",
-              cancel_url: "https://app-switch.vercel.app/#return", // Same as return_url for mobile
-              app_switch_context: {
-                mobile_web: {
-                  return_flow: "AUTO", // or MANUAL if you prefer
-                  buyer_user_agent: buyerUserAgent,
-                },
-              },
+              cancel_url: "https://app-switch.vercel.app/#cancel",
             },
           },
         },
         purchase_units: [
           {
+            reference_id: "default",
             amount: {
               currency_code: "USD",
-              value: "10.00",
+              value: cart?.amount || "10.00",
             },
+            description: "PayPal App Switch Demo Payment",
           },
         ],
       }),
     });
 
     const data = await orderRes.json();
-    console.log("Order created:", data);
+    
+    if (!orderRes.ok) {
+      console.error("Order creation failed:", data);
+      return res.status(orderRes.status).json({ 
+        error: "Failed to create order",
+        details: data 
+      });
+    }
+    
+    console.log("Order created successfully:", { id: data.id, status: data.status });
     res.status(200).json(data);
   } catch (err) {
     console.error("Create Order Error:", err);

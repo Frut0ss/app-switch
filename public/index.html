@@ -7,133 +7,272 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>PayPal App Switch Demo</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 0; padding: 40px; }
-    h2 { color: #333; }
-    #paypal-btn {
-      background: #ffc439;
-      border: none;
-      color: #253b80;
-      padding: 15px 30px;
-      font-size: 16px;
-      font-weight: bold;
-      border-radius: 4px;
-      cursor: pointer;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+      line-height: 1.6;
+      padding: 16px;
       display: flex;
       align-items: center;
-      gap: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      transition: background 0.2s;
+      justify-content: center;
     }
-    #paypal-btn:hover {
-      background: #f4b92e;
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
+      padding: 32px 24px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 10px 20px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
-    #paypal-logo {
-      height: 25px;
-      vertical-align: middle;
-    }
-    .creator {
-      margin-top: 40px;
-      font-size: 14px;
-      color: #666;
+
+    .header {
       text-align: center;
+      margin-bottom: 32px;
     }
-    .note {
-      margin-top: 20px;
-      padding: 15px;
-      background: #f8f8f8;
-      border-left: 4px solid #ffc439;
-      font-size: 14px;
+
+    .header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+    }
+
+    .header p {
       color: #666;
-      line-height: 1.5;
+      font-size: 16px;
     }
+
+    .payment-section {
+      margin-bottom: 24px;
+    }
+
+    #paypal-button-container {
+      margin: 24px 0;
+    }
+
     #status {
-      margin-top: 30px;
       padding: 16px;
-      background: #fff;
-      border-radius: 6px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-      color: #222;
-      min-height: 40px;
-      font-size: 15px;
+      background: #f8fafc;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      font-size: 14px;
+      font-weight: 500;
+      text-align: center;
+      margin: 16px 0;
+      transition: all 0.3s ease;
     }
-    #debug {
-      margin-top: 16px;
-      font-size: 13px;
-      color: #666;
-      background: #f0f0f0;
-      padding: 10px;
-      border-radius: 6px;
-      word-break: break-all;
+
+    #status.success {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+      color: #166534;
     }
+
+    #status.error {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #dc2626;
+    }
+
+    #status.processing {
+      background: #fefbf0;
+      border-color: #fed7aa;
+      color: #ea580c;
+    }
+
     #retry-btn {
       display: none;
-      background: #2d9e51;
+      width: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       border: none;
       color: white;
-      padding: 12px 24px;
-      font-size: 15px;
-      font-weight: bold;
-      border-radius: 4px;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 12px;
       cursor: pointer;
-      margin-top: 20px;
-      transition: background 0.2s;
+      margin-top: 16px;
+      transition: all 0.3s ease;
     }
+
     #retry-btn:hover {
-      background: #268545;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.2);
     }
+
     #retry-btn.visible {
+      display: block;
+    }
+
+    .note {
+      margin-top: 24px;
+      padding: 16px;
+      background: rgba(255, 249, 235, 0.8);
+      border-radius: 12px;
+      border-left: 4px solid #fbbf24;
+      font-size: 14px;
+      color: #92400e;
+      line-height: 1.5;
+    }
+
+    .note-icon {
+      font-size: 18px;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .note-list {
+      margin: 8px 0 0 0;
+      list-style: none;
+    }
+
+    .note-list li {
+      margin: 4px 0;
+      padding-left: 16px;
+      position: relative;
+    }
+
+    .note-list li:before {
+      content: "•";
+      color: #fbbf24;
+      font-weight: bold;
+      position: absolute;
+      left: 0;
+    }
+
+    #debug {
+      margin-top: 16px;
+      font-size: 12px;
+      color: #6b7280;
+      background: rgba(248, 250, 252, 0.8);
+      padding: 12px;
+      border-radius: 8px;
+      word-break: break-all;
+      font-family: 'Monaco', 'Menlo', monospace;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .creator {
+      margin-top: 32px;
+      font-size: 13px;
+      color: #9ca3af;
+      text-align: center;
+    }
+
+    /* Mobile optimizations */
+    @media (max-width: 480px) {
+      body {
+        padding: 12px;
+      }
+      
+      .container {
+        padding: 24px 20px;
+        border-radius: 20px;
+      }
+      
+      .header h1 {
+        font-size: 22px;
+      }
+      
+      .header p {
+        font-size: 15px;
+      }
+    }
+
+    /* Loading animation */
+    .loading {
       display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
   </style>
+  <!-- PayPal JavaScript SDK -->
+  <script src="https://www.paypal.com/sdk/js?client-id=Ac1vORyWNh9SXRQeEb-ZP7KfzHIBjeqsJYviC05nFZ7AcWfLdqomPL2jpiBbEdVfiRxprb8BcrRhGYh2&currency=USD&intent=capture&enable-funding=paypal&disable-funding=credit,card"></script>
 </head>
 <body>
-  <h2>Pay with PayPal (App Switch)</h2>
-  <button id="paypal-btn">
-    <img id="paypal-logo" src="https://www.paypalobjects.com/webstatic/mktg/Logo/pp-logo-100px.png" alt="PayPal Logo" />
-  </button>
-  <div id="status">Ready</div>
-  <button id="retry-btn" style="display: none;">Try Another Payment</button>
-  <div id="debug"></div>
-  
-  <div class="note">
-    📱 Important: To test this demo, please:
-    <br>1. Download the PayPal Sandbox App
-    <br>2. Use a US PayPal Sandbox buyer account
-  </div>
+  <div class="container">
+    <div class="header">
+      <h1>PayPal App Switch</h1>
+      <p>Mobile Payment Demo</p>
+    </div>
+    
+    <div class="payment-section">
+      <div id="paypal-button-container"></div>
+      <div id="status">Ready to pay</div>
+      <button id="retry-btn">Try Another Payment</button>
+    </div>
+    
+    <div class="note">
+      <span class="note-icon">📱</span>
+      <strong>Testing Instructions:</strong>
+      <ul class="note-list">
+        <li>Install PayPal Sandbox App</li>
+        <li>Use US PayPal Sandbox account</li>
+        <li>Test on mobile device</li>
+      </ul>
+    </div>
 
-  <div class="creator">
-    Demo created by Alejandro Frutos
+    <div id="debug"></div>
+
+    <div class="creator">
+      Demo by Alejandro Frutos
+    </div>
   </div>
 
   <script>
     const statusDiv = document.getElementById("status");
     const debugDiv = document.getElementById("debug");
-    const paypalBtn = document.getElementById("paypal-btn");
     const retryBtn = document.getElementById("retry-btn");
 
-    function setStatus(msg) {
+    function setStatus(msg, type = 'default') {
       statusDiv.textContent = msg;
+      statusDiv.className = type;
       console.log(msg);
     }
+    
     function setDebug(obj) {
       debugDiv.textContent = JSON.stringify(obj, null, 2);
     }
     
     function showRetryButton() {
-      retryBtn.style.display = "inline-block";
-      paypalBtn.style.display = "none";
+      retryBtn.classList.add("visible");
     }
 
     function resetUI() {
-      retryBtn.style.display = "none";
-      paypalBtn.style.display = "flex";
-      setStatus("Ready");
+      retryBtn.classList.remove("visible");
+      setStatus("Ready to pay");
       setDebug({});
+      // Re-render PayPal buttons
+      renderPayPalButtons();
     }
 
     retryBtn.addEventListener("click", () => {
       resetUI();
     });
+
     function getDeviceType() {
       const ua = navigator.userAgent;
       if (/android/i.test(ua)) return "Android";
@@ -142,27 +281,6 @@
       if (/Macintosh/.test(ua)) return "Mac";
       return "Other";
     }
-
-    document.getElementById("paypal-btn").addEventListener("click", async () => {
-      setStatus("Creating order...");
-      setDebug({ device: getDeviceType(), userAgent: navigator.userAgent });
-      const res = await fetch("/api/create-order", { method: "POST" });
-      const order = await res.json();
-      setDebug({ device: getDeviceType(), userAgent: navigator.userAgent, order });
-      if (order.links) {
-        // Store order ID for checking status later
-        if (order.id) {
-          sessionStorage.setItem('pendingOrder', order.id);
-        }
-        const approvalUrl = order.links.find(link => link.rel === "payer-action").href;
-        setStatus("Redirecting to PayPal...");
-        window.location.href = approvalUrl;
-      } else {
-        setStatus("Order creation failed");
-        setDebug({ error: order });
-        console.error(order);
-      }
-    });
 
     function parseHashParams(hash) {
       const params = {};
@@ -177,13 +295,137 @@
       return params;
     }
 
-    // Handle hash changes for AUTO return flow
+    function renderPayPalButtons() {
+      // Clear existing buttons
+      document.getElementById('paypal-button-container').innerHTML = '';
+      
+      paypal.Buttons({
+        style: {
+          layout: 'vertical',
+          color: 'blue',
+          shape: 'rect',
+          label: 'paypal',
+          height: 55
+        },
+        
+        createOrder: async function(data, actions) {
+          setStatus("Creating order...", 'processing');
+          setDebug({ device: getDeviceType(), userAgent: navigator.userAgent });
+          
+          try {
+            const response = await fetch("/api/create-order", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ 
+                cart: { amount: "10.00" } 
+              })
+            });
+            
+            const order = await response.json();
+            setDebug({ 
+              device: getDeviceType(), 
+              userAgent: navigator.userAgent, 
+              order: order 
+            });
+            
+            if (!response.ok) {
+              throw new Error(order.error || 'Failed to create order');
+            }
+            
+            // Store order ID for checking status later
+            if (order.id) {
+              sessionStorage.setItem('pendingOrder', order.id);
+            }
+            
+            return order.id;
+          } catch (error) {
+            setStatus("Order creation failed", 'error');
+            setDebug({ error: error.message });
+            console.error('Order creation error:', error);
+            throw error;
+          }
+        },
+        
+        onApprove: async function(data, actions) {
+          setStatus("Processing payment...", 'processing');
+          
+          try {
+            const response = await fetch("/api/capture-order", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ orderID: data.orderID })
+            });
+            
+            const capture = await response.json();
+            setDebug({ 
+              event: 'onApprove_capture',
+              device: getDeviceType(), 
+              userAgent: navigator.userAgent, 
+              orderID: data.orderID,
+              capture: capture,
+              status: response.status
+            });
+            
+            if (response.ok && capture.status === "COMPLETED") {
+              setStatus("Payment completed!", 'success');
+              sessionStorage.removeItem('pendingOrder');
+              showRetryButton();
+            } else {
+              setStatus(`Payment failed: ${capture.error || 'Unknown error'}`, 'error');
+              console.error("Capture failed:", capture);
+              showRetryButton();
+            }
+          } catch (error) {
+            setStatus("Payment processing failed", 'error');
+            console.error("Capture error:", error);
+            setDebug({ 
+              event: 'onApprove_error',
+              error: error.message,
+              device: getDeviceType(),
+              userAgent: navigator.userAgent,
+              orderID: data.orderID
+            });
+            showRetryButton();
+          }
+        },
+        
+        onCancel: function(data) {
+          setStatus("Payment canceled", 'error');
+          sessionStorage.removeItem('pendingOrder');
+          setDebug({ 
+            event: 'onCancel',
+            device: getDeviceType(), 
+            userAgent: navigator.userAgent, 
+            orderID: data.orderID 
+          });
+          showRetryButton();
+        },
+        
+        onError: function(err) {
+          setStatus("Payment error occurred", 'error');
+          console.error('PayPal error:', err);
+          setDebug({ 
+            event: 'onError',
+            error: err.toString(),
+            device: getDeviceType(),
+            userAgent: navigator.userAgent
+          });
+          showRetryButton();
+        }
+      }).render('#paypal-button-container');
+    }
+
+    // Handle hash changes for AUTO return flow (App Switch)
     window.addEventListener("hashchange", async (e) => {
       const params = parseHashParams(window.location.hash);
       setDebug({ event: 'hashchange', params });
       
       if (params.token) {
-        setStatus("Capturing payment...");
+        setStatus("Capturing payment...", 'processing');
         try {
           const res = await fetch("/api/capture-order", {
             method: "POST",
@@ -192,7 +434,7 @@
           });
           const capture = await res.json();
           setDebug({ 
-            event: 'capture_response',
+            event: 'hashchange_capture',
             device: getDeviceType(), 
             userAgent: navigator.userAgent, 
             params, 
@@ -201,33 +443,36 @@
           });
           
           if (res.ok && capture.status === "COMPLETED") {
-            setStatus("Payment completed!");
+            setStatus("Payment completed!", 'success');
             sessionStorage.removeItem('pendingOrder');
             showRetryButton();
           } else {
-            setStatus(`Payment capture failed: ${capture.error || 'Unknown error'}`);
+            setStatus(`Payment capture failed: ${capture.error || 'Unknown error'}`, 'error');
             console.error("Capture failed:", capture);
+            showRetryButton();
           }
         } catch (err) {
-          setStatus("Payment capture failed");
+          setStatus("Payment capture failed", 'error');
           console.error("Capture error:", err);
           setDebug({ 
-            event: 'capture_error',
+            event: 'hashchange_error',
             error: err.message,
             device: getDeviceType(),
             userAgent: navigator.userAgent,
             params
           });
+          showRetryButton();
         }
       } else if (params.canceled !== undefined) {
-        setStatus("Payment canceled by user");
+        setStatus("Payment canceled by user", 'error');
         sessionStorage.removeItem('pendingOrder');
         setDebug({ 
-          event: 'payment_canceled',
+          event: 'payment_canceled_hash',
           device: getDeviceType(), 
           userAgent: navigator.userAgent, 
           params 
         });
+        showRetryButton();
       }
     });
 
@@ -238,20 +483,28 @@
         // Check if we have a pending order to check
         const pendingOrder = sessionStorage.getItem('pendingOrder');
         if (pendingOrder) {
-          setStatus("Checking order status...");
-          const res = await fetch("/api/capture-order", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ orderID: pendingOrder })
-          });
-          const capture = await res.json();
-          setDebug({ event: 'visibilitychange', pendingOrder, capture });
-          if (capture.status === "COMPLETED") {
-            setStatus("Payment completed!");
-            sessionStorage.removeItem('pendingOrder');
-          } else if (capture.error) {
-            setStatus("Payment not completed. You can try again.");
-            sessionStorage.removeItem('pendingOrder');
+          setStatus("Checking order status...", 'processing');
+          try {
+            const res = await fetch("/api/capture-order", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ orderID: pendingOrder })
+            });
+            const capture = await res.json();
+            setDebug({ event: 'visibilitychange_check', pendingOrder, capture });
+            
+            if (res.ok && capture.status === "COMPLETED") {
+              setStatus("Payment completed!", 'success');
+              sessionStorage.removeItem('pendingOrder');
+              showRetryButton();
+            } else if (capture.error) {
+              setStatus("Payment not completed. You can try again.", 'error');
+              sessionStorage.removeItem('pendingOrder');
+              showRetryButton();
+            }
+          } catch (error) {
+            console.error('Visibility check error:', error);
+            setStatus("Ready to pay");
           }
         }
       }
@@ -268,7 +521,7 @@
           window.history.replaceState({}, document.title, window.location.pathname);
         }
         
-        setStatus("Capturing payment...");
+        setStatus("Capturing payment...", 'processing');
         try {
           const res = await fetch("/api/capture-order", {
             method: "POST",
@@ -277,7 +530,7 @@
           });
           const capture = await res.json();
           setDebug({ 
-            event: 'initial_capture',
+            event: 'initial_load_capture',
             device: getDeviceType(), 
             userAgent: navigator.userAgent, 
             params, 
@@ -286,31 +539,49 @@
           });
           
           if (res.ok && capture.status === "COMPLETED") {
-            setStatus("Payment completed!");
+            setStatus("Payment completed!", 'success');
             sessionStorage.removeItem('pendingOrder');
+            showRetryButton();
           } else {
-            setStatus(`Payment capture failed: ${capture.error || 'Unknown error'}`);
+            setStatus(`Payment capture failed: ${capture.error || 'Unknown error'}`, 'error');
             console.error("Capture failed:", capture);
+            showRetryButton();
           }
         } catch (err) {
-          setStatus("Payment capture failed");
+          setStatus("Payment capture failed", 'error');
           console.error("Capture error:", err);
           setDebug({ 
-            event: 'initial_capture_error',
+            event: 'initial_load_error',
             error: err.message,
             device: getDeviceType(),
             userAgent: navigator.userAgent,
             params
           });
+          showRetryButton();
         }
       } else if (params.canceled !== undefined) {
-        setStatus("Payment canceled");
+        setStatus("Payment canceled", 'error');
         // Clean up the URL
         if (window.history && window.history.replaceState) {
           window.history.replaceState({}, document.title, window.location.pathname);
         }
-        setDebug({ device: getDeviceType(), userAgent: navigator.userAgent, params });
+        setDebug({ 
+          event: 'initial_load_canceled', 
+          device: getDeviceType(), 
+          userAgent: navigator.userAgent, 
+          params 
+        });
+        showRetryButton();
       }
+      
+      // Render PayPal buttons after handling any return flow
+      setTimeout(() => {
+        if (typeof paypal !== 'undefined') {
+          renderPayPalButtons();
+        } else {
+          setStatus("PayPal SDK not loaded", 'error');
+        }
+      }, 100);
     });
   </script>
 </body>
